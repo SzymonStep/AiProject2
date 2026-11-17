@@ -1,0 +1,6 @@
+build/
+progress.txt
+*.o
+*.exe
+.vs/
+out/
