@@ -18,8 +18,8 @@
 /* ---------------------------------------------------------------------------
  *  Window size the layout was designed for.
  * ------------------------------------------------------------------------- */
-#define WIN_W 1440
-#define WIN_H 900
+#define WIN_W 1920
+#define WIN_H 1080
 
 /* ---------------------------------------------------------------------------
  *  Palette. One place to change the look of the whole app.
@@ -52,6 +52,53 @@ bool UiButton(Rectangle r, const char *label, Color base, Color hover,
 
 /* Rounded track with a filled portion, t in 0..1. */
 void UiProgressBar(Rectangle r, float t, Color fill);
+
+/* Ring that fills clockwise from 12 o'clock, t in 0..1, with "NN%" inside. */
+void UiProgressRing(Vector2 centre, float radius, float thickness, float t,
+                    Color fill, Color hole);
+
+/* Rounded pill with centred text, used for status labels. */
+void UiBadge(Rectangle r, const char *label, Color text, Color fill, int fontSize);
+
+/* --- text ----------------------------------------------------------------- */
+/* Draws `text` breaking on spaces so no line is wider than `width`.
+ * Returns the height used, so callers can lay out what comes below. */
+float UiTextWrapped(const char *text, float x, float y, float width,
+                    int fontSize, float lineGap, Color color);
+
+/* --- scrolling ------------------------------------------------------------ */
+/* Updates *scroll from the mouse wheel while the cursor is inside `view`,
+ * clamps it to the content, and draws a slim track on the right edge when
+ * the content is taller than the view. Draw the content inside
+ * BeginScissorMode(view) offset by -*scroll. */
+void UiScrollArea(Rectangle view, float contentHeight, float *scroll);
+
+/* Tick and cross marks centred on (cx, cy), `s` is half their size. */
+void UiTick(float cx, float cy, float s, Color c);
+void UiCross(float cx, float cy, float s, Color c);
+
+/* Colours for right and wrong. */
+#define COL_GOOD_BG   CLITERAL(Color){ 225, 245, 236, 255 }
+#define COL_GOOD_FG   CLITERAL(Color){  30, 140, 100, 255 }
+#define COL_BAD_BG    CLITERAL(Color){ 253, 232, 232, 255 }
+#define COL_BAD_FG    CLITERAL(Color){ 200,  60,  70, 255 }
+
+/* --- page layout ---------------------------------------------------------- */
+/* The area right of the sidebar that screens draw into, from the current
+ * window size. */
+Rectangle UiContentArea(void);
+
+/* Small blue kicker line above a large title, as on every screen. */
+void UiPageTitle(float x, const char *kicker, const char *title);
+
+/* A text link such as "< Back to C Fundamentals". Returns true when clicked. */
+bool UiLink(float x, float y, const char *label, int fontSize);
+
+/* White rounded card. */
+void UiCard(Rectangle r);
+
+/* Heading with a short muted line under it; returns the height used. */
+float UiSectionTitle(float x, float y, const char *title, const char *sub);
 
 /* --- toast ---------------------------------------------------------------- */
 /* A short message in the bottom-right corner that fades out by itself. */

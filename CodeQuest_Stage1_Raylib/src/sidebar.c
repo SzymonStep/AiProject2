@@ -6,6 +6,8 @@
  * ========================================================================== */
 #include "sidebar.h"
 #include "ui.h"
+#include "app.h"
+#include "save.h"
 
 #include <stdio.h>
 
@@ -33,7 +35,7 @@ static void DrawLogo(void)
     DrawText("LEARN  PRACTISE  MASTER", 75, 49, 8, COL_MUTED);
 }
 
-static void DrawMenu(NavItem *active)
+static void DrawMenu(NavItem active)
 {
     DrawText("YOUR SPACE", 24, 105, 10, COL_MUTED);
 
@@ -50,7 +52,7 @@ static void DrawMenu(NavItem *active)
         }
 
         Rectangle item = { 12, (float)y, 224, 39 };
-        bool selected = (i == (int)*active);
+        bool selected = (i == (int)active);
         bool over = UiIsHover(item);
 
         if (selected)  DrawRectangleRounded(item, 0.22f, 8, COL_BLUE_LIGHT);
@@ -62,14 +64,9 @@ static void DrawMenu(NavItem *active)
         DrawText(NAV[i].icon, 34 - iconW / 2, y + 13, 12, itemColor);
         DrawText(NAV[i].label, 55, y + 12, 13, itemColor);
 
-        if (over && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-            *active = (NavItem)i;
-            if (i != NAV_DASHBOARD) {
-                char msg[96];
-                snprintf(msg, sizeof msg, "%s will be built in a later stage.", NAV[i].label);
-                UiShowToast(msg);
-            }
-        }
+        /* main.c decides what a click means; sections not built yet toast */
+        if (over && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            AppNavigate((NavItem)i);
     }
 }
 
@@ -83,7 +80,7 @@ static void DrawHelpCard(void)
 
     if (UiButton((Rectangle){ 28, 759, 112, 25 }, "Ask the robot",
                  COL_WHITE, COL_BLUE_LIGHT, COL_BLUE_DARK, 10))
-        UiShowToast("Your robot helper will arrive in a future stage.");
+        AppToggleRobot();
 }
 
 static void DrawProfile(void)
@@ -92,10 +89,12 @@ static void DrawProfile(void)
     DrawCircle(39, 852, 17, (Color){ 223, 242, 255, 255 });
     DrawText("ME", 28, 846, 10, COL_BLUE_DARK);
     DrawText("Code Explorer", 65, 840, 12, COL_NAVY);
-    DrawText("Level 1  -  Beginner", 65, 857, 9, COL_MUTED);
+    char level[48];
+    snprintf(level, sizeof level, "Level %d  -  %s", SaveLevel(), SaveLevelTitle());
+    DrawText(level, 65, 857, 9, COL_MUTED);
 }
 
-void SidebarDraw(NavItem *active)
+void SidebarDraw(NavItem active)
 {
     DrawRectangle(0, 0, SIDEBAR_W, GetScreenHeight(), COL_WHITE);
     DrawLine(SIDEBAR_W - 1, 0, SIDEBAR_W - 1, GetScreenHeight(), COL_LINE);
@@ -104,4 +103,10 @@ void SidebarDraw(NavItem *active)
     DrawMenu(active);
     DrawHelpCard();
     DrawProfile();
+}
+
+const char *SidebarLabel(NavItem item)
+{
+    if ((int)item < 0 || item >= NAV_COUNT) return "";
+    return NAV[item].label;
 }

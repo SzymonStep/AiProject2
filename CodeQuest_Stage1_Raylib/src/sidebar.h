@@ -22,8 +22,11 @@ typedef enum NavItem {
     NAV_COUNT
 } NavItem;
 
-/* Draws the sidebar and handles clicks. Writes the newly chosen item to
- * *active when the user clicks one. */
-void SidebarDraw(NavItem *active);
+/* Draws the sidebar with `active` highlighted. A click calls AppNavigate(),
+ * so main.c decides what each item does. */
+void SidebarDraw(NavItem active);
+
+/* The menu label for an item, e.g. "Learn C++". */
+const char *SidebarLabel(NavItem item);
 
 #endif /* SIDEBAR_H */

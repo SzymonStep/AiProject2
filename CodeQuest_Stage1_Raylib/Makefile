@@ -8,7 +8,8 @@
 #    make            build the app into build/CodeQuest.exe
 #    make run        build and launch it
 #    make debug      build with the console attached (TRACELOG visible)
-#    make shots      regenerate the screenshots in shots/
+#    make shots      regenerate the screenshots in shots/ (uses demo data)
+#    make verify     recompute every Section A answer (tools/verify.c)
 #    make clean      delete build output
 #
 #  RAYLIB_DIR points at the folder the raylib Windows installer creates. The
@@ -36,7 +37,7 @@ LDFLAGS = -L$(RAYLIB_LIB) -lraylib -lopengl32 -lgdi32 -lwinmm
 # debugging so raylib's TRACELOG output is visible.
 RELEASE_FLAGS = -mwindows
 
-.PHONY: all run debug shots clean
+.PHONY: all run debug shots verify clean
 
 all: $(TARGET)
 
@@ -55,6 +56,12 @@ shots: $(SRC) | build
 	./build/CodeQuest-shot.exe --shot
 	@mkdir -p shots
 	@mv -f *.png shots/ 2>/dev/null || true
+
+# Recomputes every Section A answer from a real implementation of the lab
+# functions. Run this after adding or editing a question in content.c.
+verify: | build
+	$(CC) tools/verify.c -o build/verify.exe -std=c99 -O1
+	./build/verify.exe
 
 build:
 	@mkdir -p build
