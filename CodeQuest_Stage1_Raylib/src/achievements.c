@@ -69,27 +69,27 @@ static void DrawBadge(Rectangle r, const Badge *b)
     Vector2 c = { r.x + 44, r.y + r.height / 2 };
     DrawCircleV(c, 26, got ? COL_GOLD : COL_PAGE);
     DrawCircleLinesV(c, 26, got ? (Color){ 220, 160, 40, 255 } : COL_LINE);
-    int iw = MeasureText(b->icon, 16);
-    DrawText(b->icon, (int)c.x - iw / 2, (int)c.y - 8, 16, got ? COL_WHITE : COL_MUTED);
+    int iw = UiMeasure(b->icon, 16);
+    UiText(b->icon, (int)c.x - iw / 2, (int)c.y - 8, 16, got ? COL_ON_ACCENT : COL_MUTED);
 
     float x = r.x + 86, w = r.width - 106;
-    DrawText(b->title, (int)x, (int)(r.y + 20), 15, got ? COL_NAVY : COL_INK);
-    DrawText(b->how, (int)x, (int)(r.y + 42), 10, COL_MUTED);
+    UiText(b->title, (int)x, (int)(r.y + 20), 15, got ? COL_NAVY : COL_INK);
+    UiText(b->how, (int)x, (int)(r.y + 42), 10, COL_MUTED);
     if (got) {
-        DrawText("UNLOCKED", (int)x, (int)(r.y + 64), 10, COL_GOOD_FG);
+        UiText("UNLOCKED", (int)x, (int)(r.y + 64), 10, COL_GOOD_FG);
     } else {
         char prog[32];
         snprintf(prog, sizeof prog, "%d / %d", v, b->target);
         UiProgressBar((Rectangle){ x, r.y + 68, w - 60, 6 }, t, COL_BLUE);
-        DrawText(prog, (int)(x + w - 50), (int)(r.y + 64), 10, COL_MUTED);
+        UiText(prog, (int)(x + w - 50), (int)(r.y + 64), 10, COL_MUTED);
     }
 }
 
 static void DrawStatTile(Rectangle r, const char *value, const char *label)
 {
     UiCard(r);
-    DrawText(value, (int)(r.x + 20), (int)(r.y + 16), 24, COL_NAVY);
-    DrawText(label, (int)(r.x + 20), (int)(r.y + 48), 10, COL_MUTED);
+    UiText(value, (int)(r.x + 20), (int)(r.y + 16), 24, COL_NAVY);
+    UiText(label, (int)(r.x + 20), (int)(r.y + 48), 10, COL_MUTED);
 }
 
 void AchievementsDraw(void)
@@ -117,7 +117,7 @@ void AchievementsDraw(void)
     float tw = (area.width - 4 * 14) / 5;
     for (int i = 0; i < 5; i++)
         DrawStatTile((Rectangle){ x + i * (tw + 14), 100, tw, 72 }, values[i], i == 0 ? "level" : labels[i]);
-    DrawText(labels[0], (int)(x + 20 + MeasureText(a, 24) + 10), 124, 12, COL_BLUE);
+    UiText(labels[0], (int)(x + 20 + UiMeasure(a, 24) + 10), 124, 12, COL_BLUE);
 
     /* badge grid */
     int cols = area.width > 1400 ? 4 : 3;
@@ -131,8 +131,8 @@ void AchievementsDraw(void)
     float ry = area.y + area.height - 40;
     const char *label = confirmReset ? "Click again to wipe ALL progress" : "Reset progress";
     if (UiButton((Rectangle){ x, ry, confirmReset ? 260 : 150, 34 }, label,
-                 confirmReset ? COL_BAD_FG : COL_WHITE, confirmReset ? (Color){ 170, 40, 50, 255 } : COL_BAD_BG,
-                 confirmReset ? COL_WHITE : COL_BAD_FG, 12)) {
+                 confirmReset ? COL_BAD_FG : COL_SURFACE, confirmReset ? (Color){ 170, 40, 50, 255 } : COL_BAD_BG,
+                 confirmReset ? COL_ON_ACCENT : COL_BAD_FG, 12)) {
         if (confirmReset) { SaveReset(); UiShowToast("Progress reset. A fresh start!"); confirmReset = false; }
         else confirmReset = true;
     }

@@ -12,6 +12,7 @@
  *  makes code stand out from the light lesson pages around it.
  * ========================================================================== */
 #include "codeview.h"
+#include "ui.h"          /* UiIsDarkMode */
 
 #include <stdio.h>
 #include <string.h>
@@ -19,7 +20,8 @@
 #include <math.h>
 
 /* --- editor palette -------------------------------------------------------- */
-#define COL_CODE_BG   CLITERAL(Color){  22,  34,  48, 255 }
+/* a shade darker than the cards in dark mode so code still stands out */
+#define COL_CODE_BG   (UiIsDarkMode() ? CLITERAL(Color){ 11, 17, 26, 255 } : CLITERAL(Color){ 22, 34, 48, 255 })
 #define COL_BORDER    CLITERAL(Color){  48,  66,  88, 255 }
 #define COL_TEXT      CLITERAL(Color){ 228, 234, 244, 255 }
 #define COL_CMUTED    CLITERAL(Color){ 150, 165, 188, 255 }

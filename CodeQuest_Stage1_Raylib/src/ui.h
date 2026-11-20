@@ -22,24 +22,86 @@
 #define WIN_H 1080
 
 /* ---------------------------------------------------------------------------
- *  Palette. One place to change the look of the whole app.
- *  Written as compound literals so they can be used directly as Color args.
- *  (Prefixed COL_ because raylib already defines WHITE, BLUE, GOLD, ...)
+ *  Theme. Every colour the app uses comes from the current theme, so light
+ *  and dark mode are just two filled-in copies of this struct. The COL_
+ *  names read the active theme, which is why they work anywhere a Color is
+ *  expected. (Prefixed COL_ because raylib already defines WHITE, BLUE ...)
  * ------------------------------------------------------------------------- */
-#define COL_PAGE       CLITERAL(Color){ 245, 249, 253, 255 }  /* window backdrop  */
-#define COL_WHITE      CLITERAL(Color){ 255, 255, 255, 255 }  /* card surface     */
-#define COL_NAVY       CLITERAL(Color){  25,  54,  80, 255 }  /* headings         */
-#define COL_INK        CLITERAL(Color){  38,  61,  82, 255 }  /* body text        */
-#define COL_MUTED      CLITERAL(Color){ 123, 141, 160, 255 }  /* secondary text   */
-#define COL_BLUE       CLITERAL(Color){  40, 127, 209, 255 }  /* accent           */
-#define COL_BLUE_DARK  CLITERAL(Color){  23, 105, 178, 255 }
-#define COL_BLUE_LIGHT CLITERAL(Color){ 234, 244, 255, 255 }
-#define COL_CYAN_LIGHT CLITERAL(Color){ 232, 248, 252, 255 }
-#define COL_PURPLE     CLITERAL(Color){ 242, 237, 255, 255 }
-#define COL_LINE       CLITERAL(Color){ 229, 237, 245, 255 }  /* borders, rules   */
-#define COL_TRACK      CLITERAL(Color){ 237, 242, 247, 255 }  /* empty progress   */
-#define COL_GREEN      CLITERAL(Color){  55, 184, 135, 255 }
-#define COL_GOLD       CLITERAL(Color){ 245, 189,  72, 255 }
+typedef struct Theme {
+    Color page;        /* window backdrop                         */
+    Color surface;     /* cards, sidebar                          */
+    Color navy;        /* headings                                */
+    Color ink;         /* body text                               */
+    Color muted;       /* secondary text                          */
+    Color blue;        /* accent: buttons, bars, selection        */
+    Color blueDark;    /* accent text on light-blue backgrounds   */
+    Color blueLight;   /* soft accent background                  */
+    Color cyanLight;
+    Color purple;
+    Color line;        /* borders, rules                          */
+    Color track;       /* empty part of a progress bar            */
+    Color green;
+    Color gold;
+    Color goldLight;   /* soft gold background                    */
+    Color hero;        /* dashboard welcome panel                 */
+    Color hoverLine;   /* card border on hover                    */
+    Color goodBg, goodFg, badBg, badFg;
+    Color ringTrack;   /* empty part of a progress ring           */
+    Color scroll;      /* scrollbar thumb                         */
+    Color helpBg;      /* sidebar help card                       */
+    Color avatar;      /* profile circle                          */
+    Color toastBg, toastFg;
+    Color overlay;     /* dimming behind pop-ups                  */
+} Theme;
+
+extern Theme gTheme;
+
+void UiSetDarkMode(bool dark);
+bool UiIsDarkMode(void);
+
+#define COL_PAGE       (gTheme.page)
+#define COL_SURFACE    (gTheme.surface)
+#define COL_NAVY       (gTheme.navy)
+#define COL_INK        (gTheme.ink)
+#define COL_MUTED      (gTheme.muted)
+#define COL_BLUE       (gTheme.blue)
+#define COL_BLUE_DARK  (gTheme.blueDark)
+#define COL_BLUE_LIGHT (gTheme.blueLight)
+#define COL_CYAN_LIGHT (gTheme.cyanLight)
+#define COL_PURPLE     (gTheme.purple)
+#define COL_LINE       (gTheme.line)
+#define COL_TRACK      (gTheme.track)
+#define COL_GREEN      (gTheme.green)
+#define COL_GOLD       (gTheme.gold)
+#define COL_GOLD_LIGHT (gTheme.goldLight)
+#define COL_HERO       (gTheme.hero)
+#define COL_HOVER_LINE (gTheme.hoverLine)
+#define COL_RING_TRACK (gTheme.ringTrack)
+#define COL_SCROLL     (gTheme.scroll)
+#define COL_HELP_BG    (gTheme.helpBg)
+#define COL_AVATAR     (gTheme.avatar)
+#define COL_TOAST_BG   (gTheme.toastBg)
+#define COL_TOAST_FG   (gTheme.toastFg)
+#define COL_OVERLAY    (gTheme.overlay)
+#define COL_GOOD_BG    (gTheme.goodBg)
+#define COL_GOOD_FG    (gTheme.goodFg)
+#define COL_BAD_BG     (gTheme.badBg)
+#define COL_BAD_FG     (gTheme.badFg)
+
+/* Text on a solid accent (blue, gold, red) background: white in both themes. */
+#define COL_ON_ACCENT  CLITERAL(Color){ 255, 255, 255, 255 }
+
+/* --- fonts ---------------------------------------------------------------- */
+/* Loads Segoe UI for the interface (falls back to raylib's built-in font).
+ * Call after InitWindow. */
+void UiLoadFonts(void);
+void UiUnloadFonts(void);
+
+/* Interface text. `size` is the design size used throughout the layout; it
+ * is scaled up slightly so small labels stay readable in a real font. Sizes
+ * of 15 and above use the semibold weight for headings. */
+void UiText(const char *text, int x, int y, int size, Color color);
+int  UiMeasure(const char *text, int size);
 
 /* --- interaction helpers -------------------------------------------------- */
 bool UiIsHover(Rectangle r);
@@ -77,11 +139,8 @@ void UiScrollArea(Rectangle view, float contentHeight, float *scroll);
 void UiTick(float cx, float cy, float s, Color c);
 void UiCross(float cx, float cy, float s, Color c);
 
-/* Colours for right and wrong. */
-#define COL_GOOD_BG   CLITERAL(Color){ 225, 245, 236, 255 }
-#define COL_GOOD_FG   CLITERAL(Color){  30, 140, 100, 255 }
-#define COL_BAD_BG    CLITERAL(Color){ 253, 232, 232, 255 }
-#define COL_BAD_FG    CLITERAL(Color){ 200,  60,  70, 255 }
+/* A small on/off switch. Returns true on the frame it is clicked. */
+bool UiSwitch(Rectangle r, bool on);
 
 /* --- page layout ---------------------------------------------------------- */
 /* The area right of the sidebar that screens draw into, from the current

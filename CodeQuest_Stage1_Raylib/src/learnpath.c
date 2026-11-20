@@ -32,7 +32,7 @@ static Color PathTint(PathId id)
 {
     switch (id) {
     case PATH_EXAM1:        return COL_CYAN_LIGHT;
-    case PATH_EXAM2:        return (Color){ 255, 245, 223, 255 };
+    case PATH_EXAM2:        return COL_GOLD_LIGHT;
     case PATH_ADVANCED_CPP: return COL_PURPLE;
     default:                return COL_BLUE_LIGHT;
     }
@@ -56,8 +56,8 @@ PathId LearnPathSelected(void)
 static void DrawIconTile(Rectangle r, const char *icon, Color bg, int fontSize)
 {
     DrawRectangleRounded(r, 0.25f, 8, bg);
-    int w = MeasureText(icon, fontSize);
-    DrawText(icon, (int)(r.x + (r.width - w) / 2),
+    int w = UiMeasure(icon, fontSize);
+    UiText(icon, (int)(r.x + (r.width - w) / 2),
              (int)(r.y + (r.height - fontSize) / 2), fontSize, COL_BLUE_DARK);
 }
 
@@ -79,8 +79,8 @@ static void FormatDuration(int minutes, char *out, int cap)
  * ------------------------------------------------------------------------- */
 static void DrawHeader(float x, float right)
 {
-    DrawText("LEARNING PATHS", (int)x, 30, 10, COL_BLUE);
-    DrawText("Choose your path", (int)x, 51, 28, COL_NAVY);
+    UiText("LEARNING PATHS", (int)x, 30, 10, COL_BLUE);
+    UiText("Choose your path", (int)x, 51, 28, COL_NAVY);
 
     int done = 0, total = 0;
     for (int i = 0; i < PATH_COUNT; ++i) {
@@ -89,7 +89,7 @@ static void DrawHeader(float x, float right)
     }
     char summary[64];
     snprintf(summary, sizeof summary, "%d of %d lessons completed", done, total);
-    DrawText(summary, (int)right - MeasureText(summary, 12), 44, 12, COL_INK);
+    UiText(summary, (int)right - UiMeasure(summary, 12), 44, 12, COL_INK);
 }
 
 static void DrawSelectorCard(Rectangle r, PathId id)
@@ -98,26 +98,26 @@ static void DrawSelectorCard(Rectangle r, PathId id)
     bool isSel = (id == selected);
     bool over = UiIsHover(r);
 
-    DrawRectangleRounded(r, 0.12f, 12, isSel ? COL_BLUE_LIGHT : COL_WHITE);
+    DrawRectangleRounded(r, 0.12f, 12, isSel ? COL_BLUE_LIGHT : COL_SURFACE);
     if (isSel)
         DrawRectangleRoundedLinesEx(r, 0.12f, 12, 2.0f, COL_BLUE);
     else
         DrawRectangleRoundedLines(r, 0.12f, 12,
-                                  over ? (Color){ 190, 220, 245, 255 } : COL_LINE);
+                                  over ? COL_HOVER_LINE : COL_LINE);
 
     DrawIconTile((Rectangle){ r.x + 16, r.y + 16, 42, 42 }, p->icon,
-                 isSel ? COL_WHITE : PathTint(id), 20);
-    DrawText(p->title, (int)(r.x + 72), (int)(r.y + 20), 15, COL_NAVY);
+                 isSel ? COL_SURFACE : PathTint(id), 20);
+    UiText(p->title, (int)(r.x + 72), (int)(r.y + 20), 15, COL_NAVY);
 
     char count[48];
     snprintf(count, sizeof count, "%d / %d %s", PathCompleted(id), p->lessonCount, p->unitWord);
-    DrawText(count, (int)(r.x + 72), (int)(r.y + 42), 10, COL_MUTED);
+    UiText(count, (int)(r.x + 72), (int)(r.y + 42), 10, COL_MUTED);
 
     float t = PathProgress(id);
     UiProgressBar((Rectangle){ r.x + 16, r.y + 82, r.width - 72, 6 }, t, COL_BLUE);
     char pct[8];
     snprintf(pct, sizeof pct, "%d%%", (int)(t * 100.0f + 0.5f));
-    DrawText(pct, (int)(r.x + r.width - 16) - MeasureText(pct, 10), (int)(r.y + 80), 10, COL_MUTED);
+    UiText(pct, (int)(r.x + r.width - 16) - UiMeasure(pct, 10), (int)(r.y + 80), 10, COL_MUTED);
 
     if (over && IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !isSel)
         LearnPathSelect(id);
@@ -146,32 +146,32 @@ static void DrawLessonRow(Rectangle r, int index, const Lesson *l, int next,
     /* number bubble: green tick when done, solid blue when next */
     Vector2 c = { r.x + 30, r.y + r.height / 2 };
     if (done) {
-        DrawCircleV(c, 15, (Color){ 225, 245, 236, 255 });
+        DrawCircleV(c, 15, COL_GOOD_BG);
         DrawTick(c.x, c.y, 6, COL_GREEN);
     } else {
         char num[8];
         snprintf(num, sizeof num, "%d", index + 1);
         DrawCircleV(c, 15, isNext ? COL_BLUE : COL_PAGE);
-        DrawText(num, (int)(c.x - MeasureText(num, 12) / 2.0f), (int)(c.y - 6), 12,
-                 isNext ? COL_WHITE : COL_MUTED);
+        UiText(num, (int)(c.x - UiMeasure(num, 12) / 2.0f), (int)(c.y - 6), 12,
+                 isNext ? COL_ON_ACCENT : COL_MUTED);
     }
 
-    DrawText(l->title,   (int)(r.x + 60), (int)(r.y + 13), 14, COL_NAVY);
-    DrawText(l->summary, (int)(r.x + 60), (int)(r.y + 34), 10, COL_MUTED);
+    UiText(l->title,   (int)(r.x + 60), (int)(r.y + 13), 14, COL_NAVY);
+    UiText(l->summary, (int)(r.x + 60), (int)(r.y + 34), 10, COL_MUTED);
 
     /* right side: badge then duration */
     float rx = r.x + r.width - 16;
     char mins[16];
     snprintf(mins, sizeof mins, "%d min", l->minutes);
-    rx -= MeasureText(mins, 10);
-    DrawText(mins, (int)rx, (int)(r.y + r.height / 2 - 5), 10, COL_MUTED);
+    rx -= UiMeasure(mins, 10);
+    UiText(mins, (int)rx, (int)(r.y + r.height / 2 - 5), 10, COL_MUTED);
 
     if (done)
         UiBadge((Rectangle){ rx - 84, r.y + r.height / 2 - 10, 68, 20 }, "DONE",
-                (Color){ 30, 140, 100, 255 }, (Color){ 225, 245, 236, 255 }, 9);
+                COL_GOOD_FG, COL_GOOD_BG, 9);
     else if (isNext)
         UiBadge((Rectangle){ rx - 84, r.y + r.height / 2 - 10, 68, 20 }, "UP NEXT",
-                COL_WHITE, COL_BLUE, 9);
+                COL_ON_ACCENT, COL_BLUE, 9);
 
     /* separator */
     if (!isNext)
@@ -184,8 +184,8 @@ static void DrawLessonRow(Rectangle r, int index, const Lesson *l, int next,
 
 static void DrawStat(float x, float y, const char *value, const char *label)
 {
-    DrawText(value, (int)x, (int)y, 18, COL_NAVY);
-    DrawText(label, (int)x, (int)(y + 24), 9, COL_MUTED);
+    UiText(value, (int)x, (int)y, 18, COL_NAVY);
+    UiText(label, (int)x, (int)(y + 24), 9, COL_MUTED);
 }
 
 static void DrawDetailPanel(Rectangle panel)
@@ -193,12 +193,12 @@ static void DrawDetailPanel(Rectangle panel)
     const LearningPath *p = PathGet(selected);
     int next = PathNextLesson(selected);
 
-    DrawRectangleRounded(panel, 0.04f, 12, COL_WHITE);
+    DrawRectangleRounded(panel, 0.04f, 12, COL_SURFACE);
 
     float x = panel.x + 24, y = panel.y + 22;
     DrawIconTile((Rectangle){ x, y, 52, 52 }, p->icon, PathTint(selected), 24);
-    DrawText(p->title, (int)(x + 68), (int)(y + 4), 22, COL_NAVY);
-    DrawText(p->tagline, (int)(x + 68), (int)(y + 32), 11, COL_MUTED);
+    UiText(p->title, (int)(x + 68), (int)(y + 4), 22, COL_NAVY);
+    UiText(p->tagline, (int)(x + 68), (int)(y + 32), 11, COL_MUTED);
     y += 70;
 
     y += UiTextWrapped(p->description, x, y, panel.width - 48, 12, 6, COL_INK);
@@ -240,15 +240,15 @@ static void DrawSidePanel(Rectangle panel)
     const LearningPath *p = PathGet(selected);
     int next = PathNextLesson(selected);
 
-    DrawRectangleRounded(panel, 0.05f, 12, COL_WHITE);
+    DrawRectangleRounded(panel, 0.05f, 12, COL_SURFACE);
     float x = panel.x + 24, y = panel.y + 24;
 
-    DrawText("WHAT YOU'LL LEARN", (int)x, (int)y, 10, COL_MUTED);
+    UiText("WHAT YOU'LL LEARN", (int)x, (int)y, 10, COL_MUTED);
     y += 24;
     for (int i = 0; i < PATH_SKILLS; ++i) {
         DrawCircle((int)(x + 9), (int)(y + 7), 9, COL_BLUE_LIGHT);
         DrawTick(x + 9, y + 7, 4, COL_BLUE);
-        DrawText(p->skills[i], (int)(x + 28), (int)(y + 1), 12, COL_INK);
+        UiText(p->skills[i], (int)(x + 28), (int)(y + 1), 12, COL_INK);
         y += 28;
     }
 
@@ -256,38 +256,38 @@ static void DrawSidePanel(Rectangle panel)
     DrawLine((int)x, (int)y, (int)(panel.x + panel.width - 24), (int)y, COL_LINE);
     y += 20;
 
-    DrawText("YOUR PROGRESS", (int)x, (int)y, 10, COL_MUTED);
+    UiText("YOUR PROGRESS", (int)x, (int)y, 10, COL_MUTED);
     y += 22;
     UiProgressRing((Vector2){ x + 36, y + 36 }, 36, 8, PathProgress(selected),
-                   COL_BLUE, COL_WHITE);
+                   COL_BLUE, COL_SURFACE);
     char line1[48], line2[48];
     snprintf(line1, sizeof line1, "%d of %d %s", PathCompleted(selected), p->lessonCount, p->unitWord);
     snprintf(line2, sizeof line2, "%d to go", p->lessonCount - PathCompleted(selected));
-    DrawText(line1, (int)(x + 92), (int)(y + 22), 14, COL_NAVY);
-    DrawText(line2, (int)(x + 92), (int)(y + 42), 10, COL_MUTED);
+    UiText(line1, (int)(x + 92), (int)(y + 22), 14, COL_NAVY);
+    UiText(line2, (int)(x + 92), (int)(y + 42), 10, COL_MUTED);
     y += 92;
 
     DrawLine((int)x, (int)y, (int)(panel.x + panel.width - 24), (int)y, COL_LINE);
     y += 20;
 
-    DrawText(next < 0 ? "PATH COMPLETE" : (PathCompleted(selected) ? "UP NEXT" : "START HERE"),
+    UiText(next < 0 ? "PATH COMPLETE" : (PathCompleted(selected) ? "UP NEXT" : "START HERE"),
              (int)x, (int)y, 10, COL_MUTED);
     y += 22;
     if (next >= 0) {
         const Lesson *l = &p->lessons[next];
-        DrawText(l->title, (int)x, (int)y, 14, COL_NAVY);
+        UiText(l->title, (int)x, (int)y, 14, COL_NAVY);
         char sub[48];
         snprintf(sub, sizeof sub, "Lesson %d  -  %d min", next + 1, l->minutes);
-        DrawText(sub, (int)x, (int)(y + 20), 10, COL_MUTED);
+        UiText(sub, (int)x, (int)(y + 20), 10, COL_MUTED);
         y += 44;
 
         const char *label = PathCompleted(selected) ? "Continue learning  >" : "Start this path  >";
         if (UiButton((Rectangle){ x, y, panel.width - 48, 36 }, label,
-                     COL_BLUE, COL_BLUE_DARK, COL_WHITE, 12))
+                     COL_BLUE, COL_BLUE_DARK, COL_ON_ACCENT, 12))
             AppOpenLesson(selected, next);
         y += 52;
     } else {
-        DrawText("Every lesson done. Nice work!", (int)x, (int)y, 12, COL_INK);
+        UiText("Every lesson done. Nice work!", (int)x, (int)y, 12, COL_INK);
         y += 30;
     }
 

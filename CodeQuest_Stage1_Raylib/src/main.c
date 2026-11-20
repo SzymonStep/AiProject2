@@ -131,6 +131,18 @@ void AppToggleRobot(void)
     RobotToggle();
 }
 
+/* Borderless windowed rather than exclusive fullscreen: it switches
+ * instantly, keeps the desktop resolution and Alt+Tab works normally. */
+void AppToggleFullscreen(void)
+{
+    ToggleBorderlessWindowed();
+}
+
+bool AppIsFullscreen(void)
+{
+    return IsWindowState(FLAG_BORDERLESS_WINDOWED_MODE);
+}
+
 /* ---------------------------------------------------------------------------
  *  Frame
  * ------------------------------------------------------------------------- */
@@ -198,10 +210,14 @@ int main(int argc, char **argv)
     SetWindowMinSize(1280, 760);
     SetExitKey(KEY_NULL);          /* Esc closes pop-ups, not the app */
     SetTargetFPS(60);
+    UiLoadFonts();
     CodeFontLoad();
     if (shotMode) SaveUseDemoData(); else SaveLoad();
+    UiSetDarkMode(true);           /* CodeQuest always runs in dark mode */
+    if (!shotMode) MaximizeWindow();
 
     while (!WindowShouldClose()) {
+        if (IsKeyPressed(KEY_F11)) AppToggleFullscreen();
         UiUpdateToast(GetFrameTime());
         SyncSidebarWithPath();
         SetMouseCursor(MOUSE_CURSOR_DEFAULT);
@@ -226,6 +242,7 @@ int main(int argc, char **argv)
     }
 
     CodeFontUnload();
+    UiUnloadFonts();
     CloseWindow();
     return 0;
 }

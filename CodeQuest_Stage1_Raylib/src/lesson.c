@@ -94,12 +94,12 @@ static void DrawNotes(Rectangle card)
     BeginScissorMode((int)view.x, (int)view.y, (int)view.width, (int)view.height);
 
     if (heading) {
-        DrawText("FROM YOUR LECTURE NOTES", (int)x, (int)y, 10, COL_MUTED);
+        UiText("FROM YOUR LECTURE NOTES", (int)x, (int)y, 10, COL_MUTED);
         y += 18;
-        DrawText(heading, (int)x, (int)y, 18, COL_NAVY);
+        UiText(heading, (int)x, (int)y, 18, COL_NAVY);
         y += 34;
     } else {
-        DrawText("THE IDEA", (int)x, (int)y, 10, COL_MUTED);
+        UiText("THE IDEA", (int)x, (int)y, 10, COL_MUTED);
         y += 22;
     }
 
@@ -107,7 +107,7 @@ static void DrawNotes(Rectangle card)
     y += 18;
 
     if (code) {
-        DrawText("EXAMPLE", (int)x, (int)y, 10, COL_MUTED);
+        UiText("EXAMPLE", (int)x, (int)y, 10, COL_MUTED);
         y += 20;
         float h = CodeViewHeight(code, CODE_PT);
         DrawCodeClipped(code, (Rectangle){ x, y, w, h }, CODE_PT, view, false);
@@ -118,8 +118,8 @@ static void DrawNotes(Rectangle card)
         float boxH = 64;
         DrawRectangleRounded((Rectangle){ x, y, w, boxH }, 0.2f, 8, COL_BLUE_LIGHT);
         DrawRectangle((int)x, (int)(y + 10), 4, (int)boxH - 20, COL_BLUE);
-        DrawText("KEY POINT", (int)(x + 20), (int)(y + 14), 10, COL_BLUE_DARK);
-        DrawText(c->keyPoint, (int)(x + 20), (int)(y + 32), 13, COL_NAVY);
+        UiText("KEY POINT", (int)(x + 20), (int)(y + 14), 10, COL_BLUE_DARK);
+        UiText(c->keyPoint, (int)(x + 20), (int)(y + 32), 13, COL_NAVY);
         y += boxH + 10;
     }
 
@@ -140,19 +140,19 @@ static void DrawSide(Rectangle card)
     UiCard(card);
 
     if (done)
-        UiBadge((Rectangle){ x, y, 104, 22 }, "COMPLETED", (Color){ 30, 140, 100, 255 },
-                (Color){ 225, 245, 236, 255 }, 10);
+        UiBadge((Rectangle){ x, y, 104, 22 }, "COMPLETED", COL_GOOD_FG,
+                COL_GOOD_BG, 10);
     else
         UiBadge((Rectangle){ x, y, 104, 22 }, "NOT DONE YET", COL_BLUE_DARK, COL_BLUE_LIGHT, 10);
     y += 42;
 
-    DrawText("CHECK YOUR UNDERSTANDING", (int)x, (int)y, 10, COL_MUTED);
+    UiText("CHECK YOUR UNDERSTANDING", (int)x, (int)y, 10, COL_MUTED);
     y += 22;
 
     char line[160];
     const char *button;
     if (c && c->mock >= 0) {
-        DrawText("Timed mock paper", (int)x, (int)y, 16, COL_NAVY);
+        UiText("Timed mock paper", (int)x, (int)y, 16, COL_NAVY);
         y += 26;
         y += UiTextWrapped("10 questions in the real paper's format: Section A first, then "
                            "Section B, at about 90 seconds a mark. Answers are marked at the end.",
@@ -161,7 +161,7 @@ static void DrawSide(Rectangle card)
     } else if (c && c->mcqCount == 0) {
         int n = LessonQuestionCount(curPath, curLesson);
         snprintf(line, sizeof line, "%d exam questions", n);
-        DrawText(line, (int)x, (int)y, 16, COL_NAVY);
+        UiText(line, (int)x, (int)y, 16, COL_NAVY);
         y += 26;
         y += UiTextWrapped("Section A: type exactly what the code prints. Section B: fill in "
                            "the missing code. Each answer is marked straight away.",
@@ -169,7 +169,7 @@ static void DrawSide(Rectangle card)
         button = "Start practice  >";
     } else {
         snprintf(line, sizeof line, "%d quick questions", c ? c->mcqCount : 0);
-        DrawText(line, (int)x, (int)y, 16, COL_NAVY);
+        UiText(line, (int)x, (int)y, 16, COL_NAVY);
         y += 26;
         y += UiTextWrapped("Multiple choice on this lesson, with an explanation after each "
                            "answer.", x, y, w, 12, 5, COL_INK);
@@ -181,7 +181,7 @@ static void DrawSide(Rectangle card)
     y += 14;
 
     if (UiButton((Rectangle){ x, y, w, 40 }, done ? "Practise again  >" : button,
-                 COL_BLUE, COL_BLUE_DARK, COL_WHITE, 13))
+                 COL_BLUE, COL_BLUE_DARK, COL_ON_ACCENT, 13))
         AppStartLessonQuiz(curPath, curLesson);
     y += 62;
 
@@ -217,9 +217,9 @@ void LessonScreenDraw(void)
     if (UiLink(x, 28, back, 12)) AppOpenPath(curPath);
 
     snprintf(kicker, sizeof kicker, "LESSON %d OF %d  -  %d MIN", curLesson + 1, p->lessonCount, l->minutes);
-    DrawText(kicker, (int)x, 54, 10, COL_BLUE);
-    DrawText(l->title, (int)x, 72, 28, COL_NAVY);
-    DrawText(l->summary, (int)x, 106, 12, COL_MUTED);
+    UiText(kicker, (int)x, 54, 10, COL_BLUE);
+    UiText(l->title, (int)x, 72, 28, COL_NAVY);
+    UiText(l->summary, (int)x, 106, 12, COL_MUTED);
 
     float top = 136, bottom = area.y + area.height;
     DrawNotes((Rectangle){ x, top, area.width - SIDE_W - 20, bottom - top });

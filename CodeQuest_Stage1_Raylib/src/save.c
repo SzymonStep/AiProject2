@@ -273,3 +273,4 @@ void SaveRecordQuiz(int marks, int marksAvailable, int mock)
 int  SaveBestMock(MockExam exam)  { return (exam < MOCK_COUNT) ? S.bestMock[exam] : -1; }
 int  SaveQuizzesFinished(void)    { return S.quizzes; }
 bool SaveHadPerfectQuiz(void)     { return S.perfect; }
+

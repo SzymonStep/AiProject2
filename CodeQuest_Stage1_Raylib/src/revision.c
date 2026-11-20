@@ -51,23 +51,23 @@ static void DrawLeft(Rectangle col)
     Rectangle mastery = { col.x, col.y, col.width, 240 };
     UiCard(mastery);
     float x = mastery.x + 24, y = mastery.y + 22, w = mastery.width - 48;
-    DrawText("MASTERY BY LAB", (int)x, (int)y, 10, COL_MUTED);
+    UiText("MASTERY BY LAB", (int)x, (int)y, 10, COL_MUTED);
     y += 26;
     for (int t = 0; t < TOPIC_COUNT; t++) {
         float m = TopicMastery((Topic)t);
         char pct[8];
         snprintf(pct, sizeof pct, "%d%%", (int)(m * 100 + 0.5f));
-        DrawText(TopicName((Topic)t), (int)x, (int)y, 13, COL_NAVY);
-        DrawText(pct, (int)(x + w) - MeasureText(pct, 12), (int)(y + 1), 12, COL_MUTED);
+        UiText(TopicName((Topic)t), (int)x, (int)y, 13, COL_NAVY);
+        UiText(pct, (int)(x + w) - UiMeasure(pct, 12), (int)(y + 1), 12, COL_MUTED);
         UiProgressBar((Rectangle){ x, y + 22, w, 7 }, m, m >= 0.8f ? COL_GREEN : COL_BLUE);
         y += 52;
     }
-    DrawText("Mastered = answered fully right at least once.", (int)x, (int)y, 10, COL_MUTED);
+    UiText("Mastered = answered fully right at least once.", (int)x, (int)y, 10, COL_MUTED);
 
     Rectangle weak = { col.x, col.y + 258, col.width, 230 };
     UiCard(weak);
     x = weak.x + 24; y = weak.y + 22;
-    DrawText("PRACTISE YOUR WEAKEST", (int)x, (int)y, 10, COL_MUTED);
+    UiText("PRACTISE YOUR WEAKEST", (int)x, (int)y, 10, COL_MUTED);
     y += 26;
 
     int pool[256];
@@ -80,17 +80,17 @@ static void DrawLeft(Rectangle col)
 
     char line[64];
     snprintf(line, sizeof line, "%d question%s still to crack", n, n == 1 ? "" : "s");
-    DrawText(line, (int)x, (int)y, 16, COL_NAVY);
+    UiText(line, (int)x, (int)y, 16, COL_NAVY);
     y += 28;
     for (int i = 0; i < n && i < 3; i++) {
-        DrawText(QUESTIONS[pool[i]].title, (int)(x + 12), (int)y, 12, COL_INK);
+        UiText(QUESTIONS[pool[i]].title, (int)(x + 12), (int)y, 12, COL_INK);
         DrawCircle((int)(x + 3), (int)(y + 6), 3, COL_BAD_FG);
         y += 20;
     }
-    if (n > 3) { snprintf(line, sizeof line, "and %d more", n - 3); DrawText(line, (int)(x + 12), (int)y, 11, COL_MUTED); }
+    if (n > 3) { snprintf(line, sizeof line, "and %d more", n - 3); UiText(line, (int)(x + 12), (int)y, 11, COL_MUTED); }
 
     if (UiButton((Rectangle){ x, weak.y + weak.height - 62, w, 40 }, "Drill these  >",
-                 COL_BLUE, COL_BLUE_DARK, COL_WHITE, 13))
+                 COL_BLUE, COL_BLUE_DARK, COL_ON_ACCENT, 13))
         AppStartPractice("Revision - weakest questions", MODE_MIXED, pool, n, WEAK_MAX, false,
                          SCR_REVISION, -1);
 }
@@ -103,11 +103,11 @@ static void DrawNotes(Rectangle card)
     /* section tabs */
     for (int s = 0; s < NOTE_SECTION_COUNT; s++) {
         const char *name = NoteSectionName(s);
-        float w = (float)MeasureText(name, 12) + 28;
+        float w = (float)UiMeasure(name, 12) + 28;
         Rectangle tab = { x, y, w, 32 };
         bool sel = s == section, over = UiIsHover(tab);
         DrawRectangleRounded(tab, 0.5f, 8, sel ? COL_BLUE : (over ? COL_BLUE_LIGHT : COL_PAGE));
-        DrawText(name, (int)(x + 14), (int)(y + 10), 12, sel ? COL_WHITE : COL_BLUE_DARK);
+        UiText(name, (int)(x + 14), (int)(y + 10), 12, sel ? COL_ON_ACCENT : COL_BLUE_DARK);
         if (over && IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !sel) {
             section = s; noteIdx = 0; noteScroll = 0;
         }
@@ -137,7 +137,7 @@ static void DrawNotes(Rectangle card)
     BeginScissorMode((int)view.x, (int)view.y, (int)view.width, (int)view.height);
     const Note *n = &notes[noteIdx];
     float nx = view.x + 6, ny = view.y - noteScroll, nw = view.width - 30, start = ny;
-    DrawText(n->heading, (int)nx, (int)ny, 18, COL_NAVY);
+    UiText(n->heading, (int)nx, (int)ny, 18, COL_NAVY);
     ny += 32;
     ny += DrawParagraphs(n->body, nx, ny, nw, 13, COL_INK) + 16;
     if (n->code) {
@@ -154,7 +154,7 @@ void RevisionDraw(void)
     Rectangle area = UiContentArea();
     float x = area.x;
     UiPageTitle(x, "REVISION CENTRE", "Revise and fix weak spots");
-    DrawText("Your mastery from every quiz, the questions to go back to, and all of your lecture notes.",
+    UiText("Your mastery from every quiz, the questions to go back to, and all of your lecture notes.",
              (int)x, 92, 12, COL_MUTED);
 
     float top = 125, bottom = area.y + area.height;

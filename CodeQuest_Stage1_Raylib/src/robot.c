@@ -57,21 +57,21 @@ void RobotDraw(void)
     if (!open) return;
 
     float sw = (float)GetScreenWidth(), sh = (float)GetScreenHeight();
-    DrawRectangle(0, 0, (int)sw, (int)sh, (Color){ 20, 40, 60, 110 });
+    DrawRectangle(0, 0, (int)sw, (int)sh, COL_OVERLAY);
 
     Rectangle card = { (sw - 560) / 2, (sh - 300) / 2, 560, 300 };
-    DrawRectangleRounded(card, 0.08f, 12, COL_WHITE);
+    DrawRectangleRounded(card, 0.08f, 12, COL_SURFACE);
     UiDrawRobot(card.x + 30, card.y + 40);
 
     float x = card.x + 170, w = card.width - 200, y = card.y + 34;
-    DrawText("YOUR CODING ROBOT SAYS", (int)x, (int)y, 10, COL_BLUE);
+    UiText("YOUR CODING ROBOT SAYS", (int)x, (int)y, 10, COL_BLUE);
     y += 24;
     UiTextWrapped(kTips[tip], x, y, w, 15, 8, COL_NAVY);
 
     float by = card.y + card.height - 64;
     if (UiButton((Rectangle){ x, by, 150, 38 }, "Another tip", COL_BLUE_LIGHT, COL_LINE, COL_BLUE_DARK, 13))
         tip = (tip + 1 + rand() % (TIP_COUNT - 1)) % TIP_COUNT;
-    if (UiButton((Rectangle){ x + 162, by, 120, 38 }, "Thanks!", COL_BLUE, COL_BLUE_DARK, COL_WHITE, 13))
+    if (UiButton((Rectangle){ x + 162, by, 120, 38 }, "Thanks!", COL_BLUE, COL_BLUE_DARK, COL_ON_ACCENT, 13))
         open = false;
 
     /* clicking outside the card closes it too */

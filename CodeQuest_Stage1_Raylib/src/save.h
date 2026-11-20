@@ -71,4 +71,5 @@ int  SaveBestMock(MockExam exam);         /* best percentage, -1 if never */
 int  SaveQuizzesFinished(void);
 bool SaveHadPerfectQuiz(void);
 
+
 #endif /* SAVE_H */

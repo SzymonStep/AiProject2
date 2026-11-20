@@ -152,19 +152,19 @@ static void DrawHeader(Rectangle area, int index, int count, double timeLeft)
     float x = area.x, right = area.x + area.width;
 
     if (UiLink(x, 28, "<  Leave quiz", 12)) AppGoTo(Q.returnTo);
-    DrawText(Q.title, (int)x, 54, 10, COL_BLUE);
+    UiText(Q.title, (int)x, 54, 10, COL_BLUE);
 
     char head[48];
     snprintf(head, sizeof head, "Question %d of %d", index + 1, count);
-    DrawText(head, (int)x, 72, 28, COL_NAVY);
+    UiText(head, (int)x, 72, 28, COL_NAVY);
 
     if (timeLeft >= 0) {
         char clock[32];
         int s = (int)timeLeft;
         snprintf(clock, sizeof clock, "%02d:%02d left", s / 60, s % 60);
-        int w = MeasureText(clock, 20);
+        int w = UiMeasure(clock, 20);
         Color c = s < 60 ? COL_BAD_FG : COL_NAVY;
-        DrawText(clock, (int)right - w, 78, 20, c);
+        UiText(clock, (int)right - w, 78, 20, c);
     }
 
     UiProgressBar((Rectangle){ x, 112, area.width, 6 }, count ? (float)index / count : 0, COL_BLUE);
@@ -197,9 +197,9 @@ static void DrawMcq(Rectangle area)
 
         DrawRectangleRounded(row, 0.2f, 8, bg);
         char letter[2] = { (char)('A' + i), '\0' };
-        DrawCircle((int)(x + 28), (int)(y + 26), 14, COL_WHITE);
-        DrawText(letter, (int)(x + 28) - MeasureText(letter, 14) / 2, (int)(y + 19), 14, fg);
-        DrawText(m->options[i], (int)(x + 56), (int)(y + 18), 15, fg);
+        DrawCircle((int)(x + 28), (int)(y + 26), 14, COL_SURFACE);
+        UiText(letter, (int)(x + 28) - UiMeasure(letter, 14) / 2, (int)(y + 19), 14, fg);
+        UiText(m->options[i], (int)(x + 56), (int)(y + 18), 15, fg);
         if (answered && i == m->answer)  UiTick(x + iw - 28, y + 26, 7, COL_GOOD_FG);
         else if (answered && i == chosen) UiCross(x + iw - 28, y + 26, 7, COL_BAD_FG);
 
@@ -208,19 +208,19 @@ static void DrawMcq(Rectangle area)
     }
 
     if (!answered) {
-        DrawText("Pick an answer.", (int)x, (int)(y + 10), 12, COL_MUTED);
+        UiText("Pick an answer.", (int)x, (int)(y + 10), 12, COL_MUTED);
         return;
     }
 
     y += 10;
     bool right = chosen == m->answer;
-    DrawText(right ? "Correct!" : "Not quite.", (int)x, (int)y, 18, right ? COL_GOOD_FG : COL_BAD_FG);
+    UiText(right ? "Correct!" : "Not quite.", (int)x, (int)y, 18, right ? COL_GOOD_FG : COL_BAD_FG);
     y += 30;
     y += UiTextWrapped(m->explain, x, y, iw, 14, 6, COL_INK) + 20;
 
     bool last = Q.cur == Q.lc->mcqCount - 1;
     if (UiButton((Rectangle){ x, y, 200, 40 }, last ? "See results  >" : "Next question  >",
-                 COL_BLUE, COL_BLUE_DARK, COL_WHITE, 13)) {
+                 COL_BLUE, COL_BLUE_DARK, COL_ON_ACCENT, 13)) {
         if (last) Finish(); else Q.cur++;
     }
 }
@@ -267,10 +267,10 @@ static void DrawQuestionCard(Rectangle card, const Question *qu, const Attempt *
 
     const char *section = qu->kind == Q_OUTPUT ? "SECTION A  -  WHAT IS THE OUTPUT?"
                                                : "SECTION B  -  FILL IN THE BLANKS";
-    UiBadge((Rectangle){ x, y, (float)MeasureText(section, 9) + 24, 20 }, section,
+    UiBadge((Rectangle){ x, y, (float)UiMeasure(section, 9) + 24, 20 }, section,
             COL_BLUE_DARK, COL_BLUE_LIGHT, 9);
     y += 32;
-    DrawText(qu->title, (int)x, (int)y, 18, COL_NAVY);
+    UiText(qu->title, (int)x, (int)y, 18, COL_NAVY);
     y += 28;
     if (qu->prompt) y += UiTextWrapped(qu->prompt, x, y, w, 13, 6, COL_INK) + 6;
     if (qu->spec)   y += UiTextWrapped(qu->spec, x, y, w, 11, 5, COL_MUTED) + 6;
@@ -288,7 +288,7 @@ static void DrawQuestionCard(Rectangle card, const Question *qu, const Attempt *
     bool hideBlanks = !(a->answered && !exam);
     CodeView(qu->code, code, CODE_PT, Q.codeScroll, hideBlanks);
     if (maxScroll > 0)
-        DrawText("scroll for more", (int)(code.x + code.width - 110), (int)(code.y + code.height - 18), 10,
+        UiText("scroll for more", (int)(code.x + code.width - 110), (int)(code.y + code.height - 18), 10,
                  (Color){ 150, 165, 188, 255 });
 }
 
@@ -299,12 +299,12 @@ static float DrawFeedback(float x, float y, float w, const Question *qu, const A
     Color c = a->correct ? COL_GOOD_FG : (a->marks > 0 ? COL_GOLD : COL_BAD_FG);
     char marks[32];
     snprintf(marks, sizeof marks, "%d / %d", a->marks, a->marksAvailable);
-    DrawText(verdict, (int)x, (int)y, 18, c);
-    DrawText(marks, (int)(x + w) - MeasureText(marks, 14), (int)(y + 3), 14, COL_MUTED);
+    UiText(verdict, (int)x, (int)y, 18, c);
+    UiText(marks, (int)(x + w) - UiMeasure(marks, 14), (int)(y + 3), 14, COL_MUTED);
     y += 30;
 
     if (qu->kind == Q_OUTPUT) {
-        DrawText("EXPECTED OUTPUT", (int)x, (int)y, 10, COL_MUTED);
+        UiText("EXPECTED OUTPUT", (int)x, (int)y, 10, COL_MUTED);
         y += 18;
         const char *p = qu->answer;
         char line[256];
@@ -334,20 +334,20 @@ static void DrawAnswerCard(Rectangle card, const Question *qu, const Attempt *a,
     bool submit = false;
 
     if (qu->kind == Q_OUTPUT) {
-        DrawText("YOUR OUTPUT", (int)x, (int)y, 10, COL_MUTED);
+        UiText("YOUR OUTPUT", (int)x, (int)y, 10, COL_MUTED);
         y += 18;
         Rectangle box = { x, y, w, 170 };
         if (locked) Q.out.focused = false;
         bool enter = TextBoxUpdateDraw(&Q.out, box, "Type exactly what the program prints...");
         if (!locked && enter) submit = true;
         y += 178;
-        DrawText("Each printed line on its own line. Ctrl+Enter submits.", (int)x, (int)y, 10, COL_MUTED);
+        UiText("Each printed line on its own line. Ctrl+Enter submits.", (int)x, (int)y, 10, COL_MUTED);
         y += 22;
     } else {
         for (int i = 0; i < qu->blankCount; i++) {
             char label[32];
             snprintf(label, sizeof label, "BLANK %d", i + 1);
-            DrawText(label, (int)x, (int)(y + 12), 10, COL_MUTED);
+            UiText(label, (int)x, (int)(y + 12), 10, COL_MUTED);
             Rectangle box = { x + 70, y, w - 70 - (locked ? 34 : 0), 36 };
             if (locked) Q.blanks[i].focused = false;
             if (TextBoxUpdateDraw(&Q.blanks[i], box, NULL) && !locked) {
@@ -370,14 +370,14 @@ static void DrawAnswerCard(Rectangle card, const Question *qu, const Attempt *a,
                 y += 18;
             }
         }
-        DrawText("Enter moves to the next blank.", (int)x, (int)y, 10, COL_MUTED);
+        UiText("Enter moves to the next blank.", (int)x, (int)y, 10, COL_MUTED);
         y += 22;
     }
 
     if (!locked) {
         float half = (w - 12) / 2;
         if (UiButton((Rectangle){ x, y, half, 40 }, exam ? "Save answer  >" : "Submit",
-                     COL_BLUE, COL_BLUE_DARK, COL_WHITE, 13))
+                     COL_BLUE, COL_BLUE_DARK, COL_ON_ACCENT, 13))
             submit = true;
         if (UiButton((Rectangle){ x + half + 12, y, half, 40 }, exam ? "Skip" : "Show answer",
                      COL_BLUE_LIGHT, COL_LINE, COL_BLUE_DARK, 13)) {
@@ -392,7 +392,7 @@ static void DrawAnswerCard(Rectangle card, const Question *qu, const Attempt *a,
         y += 4;
         bool last = Q.quiz.current == Q.quiz.count - 1;
         if (UiButton((Rectangle){ x, y, w, 40 }, last ? "See results  >" : "Next question  >",
-                     COL_BLUE, COL_BLUE_DARK, COL_WHITE, 13))
+                     COL_BLUE, COL_BLUE_DARK, COL_ON_ACCENT, 13))
             NextOrFinish();
         y += 58;
         DrawLine((int)x, (int)y, (int)(x + w), (int)y, COL_LINE);
@@ -435,38 +435,38 @@ static void DrawResults(Rectangle area)
 
     float pct = Q.available ? (float)Q.marks / Q.available : 0;
     UiProgressRing((Vector2){ top.x + 90, top.y + 85 }, 56, 12, pct,
-                   Q.passed ? COL_GREEN : COL_GOLD, COL_WHITE);
+                   Q.passed ? COL_GREEN : COL_GOLD, COL_SURFACE);
 
     float tx = top.x + 180, ty = top.y + 34;
     char line[96];
     snprintf(line, sizeof line, "%d / %d marks", Q.marks, Q.available);
-    DrawText(line, (int)tx, (int)ty, 26, COL_NAVY);
+    UiText(line, (int)tx, (int)ty, 26, COL_NAVY);
     ty += 38;
     const char *msg = Q.passed ? (pct >= 0.999f ? "Perfect score. Brilliant work!" : "Nice work, that's a pass.")
                                : "Not a pass yet. Read the explanations and try again.";
-    DrawText(msg, (int)tx, (int)ty, 14, COL_INK);
+    UiText(msg, (int)tx, (int)ty, 14, COL_INK);
     ty += 28;
     snprintf(line, sizeof line, "+%d XP earned", Q.xp);
-    DrawText(line, (int)tx, (int)ty, 14, COL_GOLD);
+    UiText(line, (int)tx, (int)ty, 14, COL_GOLD);
     if (Q.completedLesson) {
-        DrawText("Lesson completed!", (int)tx + MeasureText(line, 14) + 24, (int)ty, 14, COL_GOOD_FG);
+        UiText("Lesson completed!", (int)tx + UiMeasure(line, 14) + 24, (int)ty, 14, COL_GOOD_FG);
     }
 
     /* buttons */
     float btnY = top.y + top.height + 18;
     float bx = x;
     if (Q.lesson >= 0) {
-        if (UiButton((Rectangle){ bx, btnY, 170, 40 }, "Back to lesson", COL_BLUE, COL_BLUE_DARK, COL_WHITE, 13))
+        if (UiButton((Rectangle){ bx, btnY, 170, 40 }, "Back to lesson", COL_BLUE, COL_BLUE_DARK, COL_ON_ACCENT, 13))
             AppOpenLesson(Q.path, Q.lesson);
         bx += 182;
         const LearningPath *p = PathGet(Q.path);
         if (Q.passed && Q.lesson + 1 < p->lessonCount) {
-            if (UiButton((Rectangle){ bx, btnY, 170, 40 }, "Next lesson  >", COL_BLUE, COL_BLUE_DARK, COL_WHITE, 13))
+            if (UiButton((Rectangle){ bx, btnY, 170, 40 }, "Next lesson  >", COL_BLUE, COL_BLUE_DARK, COL_ON_ACCENT, 13))
                 AppOpenLesson(Q.path, Q.lesson + 1);
             bx += 182;
         }
     } else {
-        if (UiButton((Rectangle){ bx, btnY, 170, 40 }, "Done", COL_BLUE, COL_BLUE_DARK, COL_WHITE, 13))
+        if (UiButton((Rectangle){ bx, btnY, 170, 40 }, "Done", COL_BLUE, COL_BLUE_DARK, COL_ON_ACCENT, 13))
             AppGoTo(Q.returnTo);
         bx += 182;
     }
@@ -475,7 +475,7 @@ static void DrawResults(Rectangle area)
 
     /* question list */
     float listTop = btnY + 64;
-    DrawText("YOUR ANSWERS", (int)x, (int)listTop, 10, COL_MUTED);
+    UiText("YOUR ANSWERS", (int)x, (int)listTop, 10, COL_MUTED);
     Rectangle view = { x, listTop + 20, w, area.y + area.height - listTop - 20 };
     int rows = Q.total;
     float rowH = 46;
@@ -496,12 +496,12 @@ static void DrawResults(Rectangle area)
             label = QUESTIONS[at->qIndex].title;
             snprintf(marks, sizeof marks, "%d / %d", at->marks, at->marksAvailable);
         }
-        DrawRectangleRounded(r, 0.2f, 8, COL_WHITE);
+        DrawRectangleRounded(r, 0.2f, 8, COL_SURFACE);
         DrawCircle((int)(r.x + 24), (int)(r.y + r.height / 2), 12, ok ? COL_GOOD_BG : COL_BAD_BG);
         if (ok) UiTick(r.x + 24, r.y + r.height / 2, 5, COL_GOOD_FG);
         else    UiCross(r.x + 24, r.y + r.height / 2, 5, COL_BAD_FG);
-        DrawText(label, (int)(r.x + 50), (int)(r.y + r.height / 2 - 7), 13, COL_NAVY);
-        DrawText(marks, (int)(r.x + r.width - 16) - MeasureText(marks, 12), (int)(r.y + r.height / 2 - 6), 12, COL_MUTED);
+        UiText(label, (int)(r.x + 50), (int)(r.y + r.height / 2 - 7), 13, COL_NAVY);
+        UiText(marks, (int)(r.x + r.width - 16) - UiMeasure(marks, 12), (int)(r.y + r.height / 2 - 6), 12, COL_MUTED);
     }
     EndScissorMode();
 }

@@ -6,7 +6,8 @@
  *
  *  Everything shown comes from the save file: the path you were last on,
  *  your streak and XP, the next lesson and today's mini quest. The layout is
- *  worked out from the window width.
+ *  worked out from the window width, and the page scrolls when the window is
+ *  too short to show it all.
  * ========================================================================== */
 #include "dashboard.h"
 #include "app.h"
@@ -16,14 +17,22 @@
 
 #include <stdio.h>
 
-#define GAP 18.0f
+#define GAP      24.0f   /* between cards              */
+#define SECTION  44.0f   /* between sections           */
+#define TITLE_H  48.0f   /* section title + subtitle   */
+#define STAT_H   116
+#define PATH_H   190
+#define BOTTOM_H 104
+
+static float scroll = 0.0f;
+static float contentH = 0.0f;   /* measured each frame for the scrollbar */
 
 /* Icon tile colour per path, matching the learning path screen. */
 static Color PathTint(PathId id)
 {
     switch (id) {
     case PATH_EXAM1:        return COL_CYAN_LIGHT;
-    case PATH_EXAM2:        return (Color){ 255, 245, 223, 255 };
+    case PATH_EXAM2:        return COL_GOLD_LIGHT;
     case PATH_ADVANCED_CPP: return COL_PURPLE;
     default:                return COL_BLUE_LIGHT;
     }
@@ -39,35 +48,46 @@ static void ContinueLearning(void)
     else AppOpenPath(path);
 }
 
+static void SectionTitle(float x, float y, const char *title, const char *sub)
+{
+    UiText(title, (int)x, (int)y, 17, COL_NAVY);
+    UiText(sub, (int)x, (int)(y + 25), 11, COL_MUTED);
+}
+
 /* ---------------------------------------------------------------------------
  *  Header and welcome
  * ------------------------------------------------------------------------- */
-static void DrawHeader(float x, float right)
+static void DrawHeader(float x, float y, float right)
 {
-    DrawText("YOUR LEARNING HUB", (int)x, 30, 10, COL_BLUE);
-    DrawText("Hey, Code Explorer!", (int)x, 51, 28, COL_NAVY);
+    UiText("YOUR LEARNING HUB", (int)x, (int)y, 10, COL_BLUE);
+    UiText("Hey, Code Explorer!", (int)x, (int)y + 21, 28, COL_NAVY);
 
+    /* streak and XP pills on the right */
     char xp[32], streak[32];
     snprintf(xp, sizeof xp, "%d XP", SaveXp());
     snprintf(streak, sizeof streak, "%d day streak", SaveStreak());
-    float rx = right - MeasureText(xp, 12);
-    DrawText(xp, (int)rx, 44, 12, COL_INK);
-    DrawText("*", (int)rx - 18, 41, 18, COL_GOLD);
-    rx -= 50 + MeasureText(streak, 12);
-    DrawText(streak, (int)rx, 44, 12, COL_INK);
-    DrawCircle((int)rx - 12, 50, 5, COL_GOLD);
+    float pillH = 34, py = y + 10;
+    float xpW = (float)UiMeasure(xp, 12) + 44, stW = (float)UiMeasure(streak, 12) + 44;
+    Rectangle xpPill = { right - xpW, py, xpW, pillH };
+    Rectangle stPill = { xpPill.x - 12 - stW, py, stW, pillH };
+    DrawRectangleRounded(xpPill, 1.0f, 12, COL_SURFACE);
+    DrawRectangleRounded(stPill, 1.0f, 12, COL_SURFACE);
+    DrawCircle((int)xpPill.x + 18, (int)(py + pillH / 2), 6, COL_GOLD);
+    UiText(xp, (int)xpPill.x + 32, (int)py + 10, 12, COL_INK);
+    DrawCircle((int)stPill.x + 18, (int)(py + pillH / 2), 6, COL_GREEN);
+    UiText(streak, (int)stPill.x + 32, (int)py + 10, 12, COL_INK);
 }
 
 static void DrawWelcome(Rectangle r)
 {
-    DrawRectangleRounded(r, 0.12f, 16, (Color){ 230, 243, 255, 255 });
-    float x = r.x + 30, y = r.y + 25;
+    DrawRectangleRounded(r, 0.12f, 16, COL_HERO);
+    float x = r.x + 36, y = r.y + 30;
 
     int done = SaveLessonsDoneAll();
     const char *kicker = done == 0 ? "YOUR FIRST QUEST IS READY" : "YOUR NEXT QUEST IS READY";
     const char *headline = done == 0 ? "Welcome! Let's write some C." : "Small steps. Big coding wins.";
-    DrawText(kicker, (int)x, (int)y, 10, COL_BLUE_DARK);
-    DrawText(headline, (int)x, (int)(y + 23), 24, COL_NAVY);
+    UiText(kicker, (int)x, (int)y, 10, COL_BLUE_DARK);
+    UiText(headline, (int)x, (int)(y + 24), 26, COL_NAVY);
 
     const LearningPath *p = PathGet(SaveLastPath());
     int next = PathNextLesson(SaveLastPath());
@@ -76,18 +96,18 @@ static void DrawWelcome(Rectangle r)
         snprintf(line, sizeof line, "Next up in %s: %s.", p->title, p->lessons[next].title);
     else
         snprintf(line, sizeof line, "You finished %s. Pick a new path below!", p->title);
-    DrawText(line, (int)x, (int)(y + 60), 12, COL_MUTED);
-    DrawText("Every challenge gets you closer to exam-ready.", (int)x, (int)(y + 78), 12, COL_MUTED);
+    UiText(line, (int)x, (int)(y + 68), 13, COL_INK);
 
-    if (UiButton((Rectangle){ x, y + 109, 180, 34 }, done == 0 ? "Start learning  >" : "Continue learning  >",
-                 COL_BLUE, COL_BLUE_DARK, COL_WHITE, 11))
+    if (UiButton((Rectangle){ x, y + 106, 200, 40 }, done == 0 ? "Start learning  >" : "Continue learning  >",
+                 COL_BLUE, COL_BLUE_DARK, COL_ON_ACCENT, 13))
         ContinueLearning();
 
-    float robotX = r.x + r.width - 190;
-    UiDrawRobot(robotX, r.y + 35);
-    DrawRectangleRounded((Rectangle){ robotX + 65, r.y + 14, 108, 27 }, 0.3f, 8, COL_WHITE);
-    DrawText(SaveStreak() >= 3 ? "On fire! Keep going!" : "You've got this!", (int)robotX + 74, (int)r.y + 22, 9,
-             COL_BLUE_DARK);
+    float robotX = r.x + r.width - 200;
+    UiDrawRobot(robotX, r.y + 44);
+    const char *bubble = SaveStreak() >= 3 ? "On fire! Keep going!" : "You've got this!";
+    float bw = (float)UiMeasure(bubble, 10) + 24;
+    DrawRectangleRounded((Rectangle){ robotX + 60, r.y + 18, bw, 28 }, 0.5f, 8, COL_SURFACE);
+    UiText(bubble, (int)(robotX + 72), (int)r.y + 25, 10, COL_BLUE_DARK);
 }
 
 /* ---------------------------------------------------------------------------
@@ -100,13 +120,14 @@ static void DrawProgressCard(Rectangle card)
     float x = card.x, y = card.y;
 
     UiCard(card);
-    UiProgressRing((Vector2){ x + 51, y + 50 }, 29, 7, PathProgress(id), COL_BLUE, COL_WHITE);
+    if (UiIsHover(card)) DrawRectangleRoundedLines(card, 0.1f, 12, COL_HOVER_LINE);
+    UiProgressRing((Vector2){ x + 60, y + STAT_H / 2.0f }, 34, 8, PathProgress(id), COL_BLUE, COL_SURFACE);
 
     char sub[64];
     snprintf(sub, sizeof sub, "%d of %d %s completed", PathCompleted(id), p->lessonCount, p->unitWord);
-    DrawText("CURRENT LEARNING PATH", (int)(x + 95), (int)(y + 24), 10, COL_MUTED);
-    DrawText(p->title, (int)(x + 95), (int)(y + 43), 19, COL_NAVY);
-    DrawText(sub, (int)(x + 95), (int)(y + 70), 10, COL_MUTED);
+    UiText("CURRENT LEARNING PATH", (int)(x + 114), (int)(y + 26), 10, COL_MUTED);
+    UiText(p->title, (int)(x + 114), (int)(y + 46), 19, COL_NAVY);
+    UiText(sub, (int)(x + 114), (int)(y + 78), 11, COL_MUTED);
 
     if (UiIsClicked(card)) AppOpenPath(id);
 }
@@ -116,21 +137,20 @@ static void DrawSmallStat(Rectangle card, const char *icon, const char *label,
 {
     float x = card.x, y = card.y;
     UiCard(card);
-    DrawRectangleRounded((Rectangle){ x + 15, y + 28, 42, 42 }, 0.25f, 8, iconBg);
-    DrawText(icon,  (int)(x + 36) - MeasureText(icon, 20) / 2, (int)(y + 38), 20, COL_BLUE_DARK);
-    DrawText(label, (int)(x + 70), (int)(y + 22), 10, COL_MUTED);
-    DrawText(value, (int)(x + 70), (int)(y + 41), 20, COL_NAVY);
-    DrawText(sub,   (int)(x + 70), (int)(y + 72),  9, COL_MUTED);
+    DrawRectangleRounded((Rectangle){ x + 20, y + 33, 50, 50 }, 0.25f, 8, iconBg);
+    UiText(icon,  (int)(x + 45) - UiMeasure(icon, 20) / 2, (int)(y + 46), 20, COL_BLUE_DARK);
+    UiText(label, (int)(x + 88), (int)(y + 24), 10, COL_MUTED);
+    UiText(value, (int)(x + 88), (int)(y + 44), 20, COL_NAVY);
+    UiText(sub,   (int)(x + 88), (int)(y + 78), 11, COL_MUTED);
 }
 
-static void DrawProgressRow(float x, float y, float width)
+static float DrawProgressRow(float x, float y, float width)
 {
-    DrawText("YOUR PROGRESS", (int)x, (int)y, 16, COL_NAVY);
-    DrawText("Look how far you've come.", (int)x, (int)(y + 21), 10, COL_MUTED);
-    y += 43;
+    SectionTitle(x, y, "YOUR PROGRESS", "Look how far you've come.");
+    y += TITLE_H;
 
     float progW = width * 0.38f, statW = (width - progW - 2 * GAP) / 2;
-    DrawProgressCard((Rectangle){ x, y, progW, 100 });
+    DrawProgressCard((Rectangle){ x, y, progW, STAT_H });
 
     char streak[24], streakSub[48], xp[24], xpSub[48];
     int s = SaveStreak();
@@ -138,14 +158,14 @@ static void DrawProgressRow(float x, float y, float width)
     snprintf(streakSub, sizeof streakSub, "%s", s == 0 ? "Finish a quiz to start one!"
                                          : s >= 7 ? "A whole week. Amazing!" : "Come back tomorrow!");
     snprintf(xp, sizeof xp, "%d XP", SaveXp());
-    snprintf(xpSub, sizeof xpSub, "Level %d %s - %d XP to next", SaveLevel(), SaveLevelTitle(),
-             SaveXpToNextLevel());
+    snprintf(xpSub, sizeof xpSub, "Level %d - %d XP to next", SaveLevel(), SaveXpToNextLevel());
 
-    DrawSmallStat((Rectangle){ x + progW + GAP, y, statW, 100 }, "!", "CURRENT STREAK", streak, streakSub,
-                  (Color){ 255, 245, 223, 255 });
-    Rectangle xpCard = { x + progW + statW + 2 * GAP, y, statW, 100 };
+    DrawSmallStat((Rectangle){ x + progW + GAP, y, statW, STAT_H }, "!", "CURRENT STREAK", streak, streakSub,
+                  COL_GOLD_LIGHT);
+    Rectangle xpCard = { x + progW + statW + 2 * GAP, y, statW, STAT_H };
     DrawSmallStat(xpCard, "*", "TOTAL EXPERIENCE", xp, xpSub, COL_BLUE_LIGHT);
-    UiProgressBar((Rectangle){ xpCard.x + 70, y + 88, xpCard.width - 90, 4 }, SaveLevelProgress(), COL_GOLD);
+    UiProgressBar((Rectangle){ xpCard.x + 88, y + STAT_H - 14, xpCard.width - 112, 5 }, SaveLevelProgress(), COL_GOLD);
+    return y + STAT_H;
 }
 
 /* ---------------------------------------------------------------------------
@@ -158,43 +178,42 @@ static void DrawPathCard(Rectangle card, PathId id)
     bool over = UiIsHover(card);
     int done = PathCompleted(id);
 
-    DrawRectangleRounded(card, 0.12f, 12, COL_WHITE);
-    DrawRectangleRoundedLines(card, 0.12f, 12, over ? (Color){ 190, 220, 245, 255 } : COL_LINE);
+    DrawRectangleRounded(card, 0.1f, 12, COL_SURFACE);
+    DrawRectangleRoundedLines(card, 0.1f, 12, over ? COL_HOVER_LINE : COL_LINE);
 
-    DrawRectangleRounded((Rectangle){ x + 15, y + 14, 42, 42 }, 0.25f, 8, PathTint(id));
-    DrawText(p->icon, (int)(x + 36) - MeasureText(p->icon, 20) / 2, (int)(y + 24), 20, COL_BLUE_DARK);
+    DrawRectangleRounded((Rectangle){ x + 20, y + 20, 46, 46 }, 0.25f, 8, PathTint(id));
+    UiText(p->icon, (int)(x + 43) - UiMeasure(p->icon, 20) / 2, (int)(y + 32), 20, COL_BLUE_DARK);
 
     const char *badge = done == p->lessonCount ? "COMPLETE" : done > 0 ? "IN PROGRESS" : p->badge;
-    UiBadge((Rectangle){ x + w - 109, y + 23, 94, 19 }, badge,
+    float bw = (float)UiMeasure(badge, 9) + 24;
+    UiBadge((Rectangle){ x + w - 20 - bw, y + 32, bw, 22 }, badge,
             done == p->lessonCount ? COL_GOOD_FG : COL_BLUE_DARK,
-            done == p->lessonCount ? COL_GOOD_BG : COL_BLUE_LIGHT, 8);
+            done == p->lessonCount ? COL_GOOD_BG : COL_BLUE_LIGHT, 9);
 
-    DrawText(p->title,   (int)(x + 15), (int)(y + 69), 15, COL_NAVY);
-    DrawText(p->tagline, (int)(x + 15), (int)(y + 94),  9, COL_MUTED);
-    char meta[48];
-    snprintf(meta, sizeof meta, "%d %s", p->lessonCount, p->unitWord);
-    DrawText(meta, (int)(x + 15), (int)(y + 108), 9, COL_MUTED);
+    UiText(p->title,   (int)(x + 20), (int)(y + 84), 16, COL_NAVY);
+    UiText(p->tagline, (int)(x + 20), (int)(y + 112), 10, COL_MUTED);
 
     float t = PathProgress(id);
-    UiProgressBar((Rectangle){ x + 15, y + 133, w - 30, 6 }, t, COL_BLUE);
+    UiProgressBar((Rectangle){ x + 20, y + 146, w - 40, 7 }, t, COL_BLUE);
 
     char count[48], pct[8];
-    if (done == 0) snprintf(count, sizeof count, "Not started");
+    if (done == 0) snprintf(count, sizeof count, "Not started  -  %d %s", p->lessonCount, p->unitWord);
     else snprintf(count, sizeof count, "%d / %d %s", done, p->lessonCount, p->unitWord);
     snprintf(pct, sizeof pct, "%d%%", (int)(t * 100.0f + 0.5f));
-    DrawText(count, (int)(x + 15), (int)(y + 146), 8, COL_MUTED);
-    DrawText(pct, (int)(x + w - 15) - MeasureText(pct, 8), (int)(y + 146), 8, COL_MUTED);
+    UiText(count, (int)(x + 20), (int)(y + 161), 10, COL_MUTED);
+    UiText(pct, (int)(x + w - 20) - UiMeasure(pct, 10), (int)(y + 161), 10, COL_MUTED);
 
     if (over && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) AppOpenPath(id);
 }
 
-static void DrawLearningPaths(float x, float y, float width)
+static float DrawLearningPaths(float x, float y, float width)
 {
-    DrawText("CHOOSE YOUR LEARNING PATH", (int)x, (int)y, 16, COL_NAVY);
-    DrawText("Build your skills one friendly lesson at a time.", (int)x, (int)(y + 21), 10, COL_MUTED);
+    SectionTitle(x, y, "CHOOSE YOUR LEARNING PATH", "Build your skills one friendly lesson at a time.");
+    y += TITLE_H;
     float w = (width - GAP * (PATH_COUNT - 1)) / PATH_COUNT;
     for (int i = 0; i < PATH_COUNT; i++)
-        DrawPathCard((Rectangle){ x + i * (w + GAP), y + 43, w, 172 }, (PathId)i);
+        DrawPathCard((Rectangle){ x + i * (w + GAP), y, w, PATH_H }, (PathId)i);
+    return y + PATH_H;
 }
 
 /* ---------------------------------------------------------------------------
@@ -202,48 +221,47 @@ static void DrawLearningPaths(float x, float y, float width)
  * ------------------------------------------------------------------------- */
 static void DrawNextLesson(float x, float y, float w)
 {
-    DrawText("PICK UP WHERE YOU LEFT OFF", (int)x, (int)y, 15, COL_NAVY);
-    DrawText("YOUR NEXT BITE-SIZED LESSON", (int)x, (int)(y + 21), 9, COL_MUTED);
-
-    Rectangle card = { x, y + 41, w, 82 };
+    SectionTitle(x, y, "PICK UP WHERE YOU LEFT OFF", "Your next bite-sized lesson.");
+    Rectangle card = { x, y + TITLE_H, w, BOTTOM_H };
     UiCard(card);
 
     PathId path = SaveLastPath();
     const LearningPath *p = PathGet(path);
     int next = PathNextLesson(path);
     if (next < 0) {
-        DrawText("Path complete! Pick a new one above.", (int)x + 20, (int)card.y + 32, 13, COL_NAVY);
+        UiText("Path complete! Pick a new one above.", (int)x + 24, (int)card.y + 40, 14, COL_NAVY);
         return;
     }
 
     char sub[96];
     snprintf(sub, sizeof sub, "%s  -  Lesson %d of %d  -  %d min",
              p->title, next + 1, p->lessonCount, p->lessons[next].minutes);
-    DrawText(p->lessons[next].title, (int)x + 20, (int)card.y + 22, 14, COL_NAVY);
-    DrawText(sub, (int)x + 20, (int)card.y + 46, 10, COL_MUTED);
+    UiText(p->lessons[next].title, (int)x + 24, (int)card.y + 28, 16, COL_NAVY);
+    UiText(sub, (int)x + 24, (int)card.y + 58, 11, COL_MUTED);
 
-    if (UiButton((Rectangle){ x + w - 115, card.y + 24, 95, 34 }, "Start", COL_BLUE, COL_BLUE_DARK, COL_WHITE, 12))
+    if (UiButton((Rectangle){ x + w - 140, card.y + 32, 116, 40 }, "Start  >",
+                 COL_BLUE, COL_BLUE_DARK, COL_ON_ACCENT, 13))
         AppOpenLesson(path, next);
 }
 
 static void DrawMiniQuest(float x, float y, float w)
 {
-    Rectangle card = { x, y, w, 123 };
+    SectionTitle(x, y, "TODAY'S MINI QUEST", "A little bonus for showing up.");
+    Rectangle card = { x, y + TITLE_H, w, BOTTOM_H };
     UiCard(card);
     int done = SaveActivitiesToday();
     if (done > QUEST_TARGET) done = QUEST_TARGET;
 
-    DrawText("TODAY'S MINI QUEST", (int)x + 20, (int)y + 17, 13, COL_NAVY);
     char goal[64], bonus[64], count[16];
     snprintf(goal, sizeof goal, "Finish %d quizzes or practice sets", QUEST_TARGET);
     if (done >= QUEST_TARGET) snprintf(bonus, sizeof bonus, "Quest complete: +%d XP earned!", XP_QUEST_BONUS);
     else snprintf(bonus, sizeof bonus, "Earn %d bonus XP when you finish.", XP_QUEST_BONUS);
     snprintf(count, sizeof count, "%d / %d", done, QUEST_TARGET);
 
-    DrawText(goal, (int)x + 20, (int)y + 45, 11, COL_INK);
-    DrawText(bonus, (int)x + 20, (int)y + 64, 9, done >= QUEST_TARGET ? COL_GOOD_FG : COL_MUTED);
-    UiProgressBar((Rectangle){ x + 20, y + 90, w - 90, 7 }, (float)done / QUEST_TARGET, COL_GREEN);
-    DrawText(count, (int)(x + w - 55), (int)y + 85, 10, COL_MUTED);
+    UiText(goal, (int)x + 24, (int)card.y + 22, 13, COL_INK);
+    UiText(bonus, (int)x + 24, (int)card.y + 46, 11, done >= QUEST_TARGET ? COL_GOOD_FG : COL_MUTED);
+    UiProgressBar((Rectangle){ x + 24, card.y + 76, w - 110, 8 }, (float)done / QUEST_TARGET, COL_GREEN);
+    UiText(count, (int)(x + w - 70), (int)card.y + 72, 11, COL_MUTED);
 }
 
 /* ---------------------------------------------------------------------------
@@ -254,12 +272,25 @@ void DashboardDraw(void)
     Rectangle area = UiContentArea();
     float x = area.x, w = area.width;
 
-    DrawHeader(x, x + w);
-    DrawWelcome((Rectangle){ x, 105, w, 175 });
-    DrawProgressRow(x, 306, w);
-    DrawLearningPaths(x, 480, w);
+    /* the whole page scrolls when the window is too short for it */
+    Rectangle view = { x - 16, 0, w + 40, (float)GetScreenHeight() };
+    UiScrollArea(view, contentH, &scroll);
+
+    float top = 30 - scroll;
+    float y = top;
+    DrawHeader(x, y, x + w);
+    y += 84;
+
+    DrawWelcome((Rectangle){ x, y, w, 190 });
+    y += 190 + SECTION;
+
+    y = DrawProgressRow(x, y, w) + SECTION;
+    y = DrawLearningPaths(x, y, w) + SECTION;
 
     float questW = w * 0.36f;
-    DrawNextLesson(x, 724, w - questW - GAP);
-    DrawMiniQuest(x + w - questW, 724, questW);
+    DrawNextLesson(x, y, w - questW - GAP);
+    DrawMiniQuest(x + w - questW, y, questW);
+    y += TITLE_H + BOTTOM_H;
+
+    contentH = (y - top) + 54;
 }

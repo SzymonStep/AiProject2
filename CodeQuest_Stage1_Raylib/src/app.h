@@ -48,4 +48,9 @@ void AppStartPractice(const char *title, QuizMode mode, const int *pool, int poo
 /* The robot helper pop-up. */
 void AppToggleRobot(void);
 
+/* Borderless fullscreen on the current monitor, toggled by F11 or the
+ * button in the sidebar. */
+void AppToggleFullscreen(void);
+bool AppIsFullscreen(void);
+
 #endif /* APP_H */

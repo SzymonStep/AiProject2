@@ -24,6 +24,7 @@ learning paths, lessons, quizzes, mock exams and saved progress.
 | **Revision Centre** | Mastery per lab, a drill of the questions you have got wrong, and every lecture note with its example. |
 | **Achievements** | 12 badges, your overall stats, and a reset button. |
 | **Ask the robot** | A pop-up of study tips from the sidebar. |
+| **Dark mode & fullscreen** | CodeQuest always runs in dark mode and opens maximised. Press **F11** (or the button next to your profile) for fullscreen. |
 
 ### The four paths
 
@@ -51,7 +52,7 @@ learning paths, lessons, quizzes, mock exams and saved progress.
 src/
   main.c            window, main loop, navigation (app.h)
   app.h             screens, and how screens ask main.c to change screen
-  ui.c/.h           palette, buttons, progress bars/rings, badges, text, scroll, toast, robot
+  ui.c/.h           light and dark themes, Segoe UI text, buttons, progress bars/rings, badges, text, scroll, toast, robot
   codeview.c/.h     syntax-highlighted code and the answer text box (from CExam Trainer)
   sidebar.c/.h      left-hand navigation
   paths.c/.h        the four learning paths and their lesson list
